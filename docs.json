@@ -3,9 +3,9 @@
   "theme": "mint",
   "name": "SkillDock Docs",
   "colors": {
-    "primary": "#0F766E",
-    "light": "#14B8A6",
-    "dark": "#115E59"
+    "primary": "#1E90FF",
+    "light": "#67B8FF",
+    "dark": "#0A0A0A"
   },
   "favicon": "/favicon.svg",
   "navigation": {
