@@ -16,14 +16,7 @@
           {
             "group": "Getting started",
             "pages": [
-              "index",
-              "quickstart"
-            ]
-          },
-          {
-            "group": "API",
-            "pages": [
-              "api-reference/introduction"
+              "index"
             ]
           }
         ]
@@ -31,8 +24,8 @@
     ]
   },
   "logo": {
-    "light": "/logo/skilldock.png",
-    "dark": "/logo/skilldock.png",
+    "light": "/logo/skilldock_wordmark_right.png",
+    "dark": "/logo/skilldock_wordmark_right.png",
     "alt": "SkillDock"
   },
   "navbar": {
@@ -48,7 +41,7 @@
     ],
     "primary": {
       "type": "button",
-      "label": "Dashboard",
+      "label": "SkillDock.io",
       "href": "https://skilldock.io"
     }
   },
@@ -66,7 +59,8 @@
   },
   "footer": {
     "socials": {
-      "github": "https://github.com/Chigwel/docs"
+      "github": "https://github.com/chigwell/skilldock.io",
+      "linkedin": "https://www.linkedin.com/groups/17274049/"
     }
   }
 }
