@@ -1,0 +1,141 @@
+---
+title: "API"
+description: "OpenAPI-based overview of the SkillDock API for discovery, publishing, commerce, and payouts."
+---
+
+## Overview
+
+The canonical SkillDock API specification is available at:
+
+- https://api.skilldock.io/openapi.json
+
+The spec is `OpenAPI 3.0.0` and currently reports:
+
+- Title: `Skilldock API`
+- Version: `0.1.0`
+
+It includes public discovery/search endpoints, auth flows (including CLI OAuth sessions), skill publishing/release endpoints, reviews, commerce/buy flows, seller balances/payouts, namespaces, and file downloads.
+
+## API reference
+
+Use the OpenAPI spec as the source of truth for endpoint paths, request/response schemas, and error codes.
+
+### Base URLs
+
+- API base URL: `https://api.skilldock.io`
+- OpenAPI JSON: `https://api.skilldock.io/openapi.json`
+
+### Main endpoint groups in the current spec
+
+- Health and registry stats:
+  - `/health`
+  - `/v1/stats`
+- Discovery, tags, trends, and search:
+  - `/v1/tags`
+  - `/v1/skills`
+  - `/trends`
+  - `/v2/search`
+  - `/v3/search`
+- Reviews and review media:
+  - `/v1/skills/{namespace}/{slug}/reviews`
+  - `/v1/reviews/{id}/images`
+  - `/v1/reviews/{id}/flag`
+  - `/v1/review-images/{id}`
+- Auth and CLI OAuth session flow:
+  - `/v1/auth/google`
+  - `/v1/me`
+  - `/auth/cli/sessions`
+  - `/auth/cli/sessions/{session_id}`
+  - `/auth/google/start`
+  - `/auth/google/callback`
+- Tokens:
+  - `/v1/tokens`
+  - `/v1/tokens/{token_id}`
+- Namespaces and membership:
+  - `/v1/namespaces`
+  - `/v1/namespaces/{slug}`
+  - `/v1/me/namespaces`
+- Skills, releases, validation, and publishing-related resources:
+  - `/v1/skills/validate`
+  - `/v1/skills/{namespace}/{slug}`
+  - `/v1/skills/{namespace}/{slug}/releases`
+  - `/v1/skills/{namespace}/{slug}/releases/{version}`
+  - `/v1/skills/{namespace}/{slug}/releases/{version}/SKILL.md`
+  - `/v1/skills/{namespace}/{slug}/releases/{version}/properties`
+  - `/v1/skills/to-prompt`
+- Commerce, pricing, purchase, invoices, and sales:
+  - `/v1/skills/{namespace}/{slug}/commerce`
+  - `/v1/skills/{namespace}/{slug}/prices`
+  - `/v1/skills/{namespace}/{slug}/buy`
+  - `/v1/skill-purchases/invoices/{invoice_id}`
+  - `/v1/me/sales`
+  - `/v1/skills/{namespace}/{slug}/sales`
+- Payout methods, balances, and payout requests:
+  - `/v1/me/payout-methods`
+  - `/v1/me/payout-methods/ton`
+  - `/v1/me/payout-methods/stripe`
+  - `/v1/me/balance`
+  - `/v1/me/balance/transactions`
+  - `/v1/me/payout-requests`
+- File downloads:
+  - `/v1/files/{id}`
+  - `/v1/files/{id}/download`
+
+### Notes from the current schema
+
+- Payment provider enums in purchase flows include `ton` and `stripe`.
+- Payout method kinds include `ton_wallet` and `stripe`.
+- Many endpoints return standard error responses such as `400`, `401`, `403`, `404`, `409`, `429`, and `500` (with endpoint-specific variants like `413` for image upload size limits).
+
+## SDK
+
+Use the OpenAPI spec to generate clients in your preferred language, or use the SkillDock CLI for common workflows.
+
+### Current recommendation
+
+- For publish/install flows: use the `skilldock` CLI
+- For custom apps/services: generate a client from `https://api.skilldock.io/openapi.json`
+- For direct HTTP usage: call the API endpoints with a bearer token where required
+
+## MCP
+
+MCP documentation for SkillDock API integrations is not published yet on this page.
+
+Until then, use one of these:
+
+- The OpenAPI spec directly
+- The `skilldock` CLI in tool-enabled environments
+
+## Integration examples
+
+Examples below use the current public API shape from the OpenAPI spec.
+
+### Public health check
+
+```bash
+curl https://api.skilldock.io/health
+```
+
+### Registry stats
+
+```bash
+curl https://api.skilldock.io/v1/stats
+```
+
+### Search public skills
+
+```bash
+curl "https://api.skilldock.io/v1/skills?q=docker&page=1&per_page=20"
+```
+
+### Create CLI auth session (rate limited)
+
+```bash
+curl -X POST https://api.skilldock.io/auth/cli/sessions
+```
+
+### Validate a local skill package payload (endpoint reference)
+
+```bash
+curl -X POST https://api.skilldock.io/v1/skills/validate
+```

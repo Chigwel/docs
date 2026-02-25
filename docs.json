@@ -16,7 +16,10 @@
           {
             "group": "Getting started",
             "pages": [
-              "index"
+              "index",
+              "publish",
+              "pricing",
+              "api"
             ]
           }
         ]

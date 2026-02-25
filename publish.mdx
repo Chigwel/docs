@@ -1,0 +1,462 @@
+---
+title: "Publish"
+description: "How to publish SkillDock skills with the CLI, including auth, tokens, verification, and releases."
+---
+
+## Overview
+
+Install the publisher helper skill or open its listing:
+
+- `skilldock install skilldock/skilldock-publisher`
+- https://skilldock.io/skill/skilldock/skilldock-publisher
+
+This guide covers the end-to-end CLI workflow to authenticate, package, verify, and publish a skill release.
+
+## How to publish
+
+### Required Inputs
+
+Collect these values before running commands:
+
+- `BASE_URL` (default `https://api.skilldock.io`)
+- `OPENAPI_URL` (default `https://api.skilldock.io/openapi.json`)
+- `NAMESPACE` (publisher namespace, for example `myorg`)
+- `SLUG` (skill id, for example `my-skill`)
+- `VERSION` (release version, for example `1.2.3`)
+- `SKILL_PATH` (local folder containing `SKILL.md`)
+
+### Auth once, then use a token
+
+Browser auth:
+
+```bash
+skilldock auth login
+```
+
+For headless environments:
+
+```bash
+skilldock auth login --no-open
+```
+
+Create and save a long-lived token (avoids repeated OAuth):
+
+```bash
+skilldock tokens create --save
+```
+
+Check active credential:
+
+```bash
+skilldock auth status
+```
+
+Manage tokens:
+
+```bash
+skilldock tokens list
+skilldock tokens revoke <ID>
+```
+
+### Tags and links
+
+Tags:
+
+- `skilldock`
+- `cli`
+- `auth`
+- `oauth`
+- `publishing`
+- `releases`
+- `tokens`
+- `verification`
+- `troubleshooting`
+- `rate-limits`
+
+Listing / Home:
+
+- https://skilldock.io/skill/skilldock/skilldock-publisher
+
+### 1) Install CLI via pip
+
+Use Python `3.10+`.
+
+```bash
+python3 -m pip install --upgrade skilldock
+skilldock --version
+```
+
+If multiple Python interpreters exist, use:
+
+```bash
+python3 -m pip show skilldock
+```
+
+### 2) Configure API endpoint (if non-default)
+
+```bash
+skilldock config set --base-url "$BASE_URL" --openapi-url "$OPENAPI_URL"
+skilldock config show
+```
+
+### 3) Authenticate with Google OAuth
+
+Run browser login:
+
+```bash
+skilldock auth login
+```
+
+Behavior:
+
+- The CLI creates an auth session.
+- The CLI prints an `auth_url` and opens the browser (or prints a `.../auth/google/start?session_id=...` link when `--no-open` is used).
+- After Google approval, the CLI polls until a token is issued.
+- The CLI stores the token in local SkillDock config.
+
+Validate auth:
+
+```bash
+skilldock auth status
+skilldock auth inspect
+```
+
+If browser auto-open fails or you are on a headless box:
+
+```bash
+skilldock auth login --no-open
+# Copy the printed https://api.skilldock.io/auth/google/start?session_id=... URL
+# Open it in a browser to approve, then wait for CLI to finish
+```
+
+If you hit HTTP `429` (rate limit is approximately 5 attempts/minute), wait a full minute before retrying.
+
+### 4) Create and manage API tokens
+
+Create a long-lived token and save it as default:
+
+```bash
+skilldock tokens create --save
+```
+
+Create a scoped/expiring token:
+
+```bash
+skilldock tokens create --scope skills:write --scope skills:read --expires-in-days 90 --save
+```
+
+List tokens:
+
+```bash
+skilldock tokens list
+```
+
+Revoke a token (delete token credential):
+
+```bash
+skilldock tokens revoke <TOKEN_ID>
+```
+
+### 5) Create a new local skill (manual scaffold)
+
+SkillDock currently packages existing folders. It does not provide a dedicated scaffold command.
+
+Create the folder:
+
+```bash
+mkdir -p "$SKILL_PATH"
+```
+
+Create the required `SKILL.md` file at the skill root:
+
+```markdown
+---
+name: my-skill
+description: Clear trigger-oriented description of what this skill does and when to use it.
+---
+
+# My Skill
+
+## What It Does
+- Describe concrete behavior.
+
+## Inputs
+- List required inputs.
+
+## Workflow
+1. Step one.
+2. Step two.
+3. Step three.
+```
+
+Optional files:
+
+- `requirements.txt`
+- Scripts used by the skill
+- `references/` or assets
+
+### 6) Format a good skill
+
+Follow these rules:
+
+- Keep frontmatter minimal: `name` and `description`
+- Use a specific description that includes trigger conditions
+- Keep instructions procedural and command-first
+- Include required inputs and expected outputs
+- Keep runnable commands copy-paste safe
+- Keep the folder clean; avoid virtualenvs, build folders, and git metadata in the published artifact
+
+Packaging constraints enforced by the CLI packager:
+
+- `SKILL.md` must exist at skill root
+- Symbolic links are skipped
+- Common junk folders are excluded (`.git`, `.venv`, `venv`, `node_modules`, `dist`, `build`, caches)
+- Zip files larger than `10 MiB` emit a warning
+
+### 7) Verify before publish
+
+Run package verification:
+
+```bash
+skilldock skill verify "$SKILL_PATH"
+```
+
+Use a dry-run upload to validate the publish payload without a network write:
+
+```bash
+skilldock skill upload \
+  --namespace "$NAMESPACE" \
+  --slug "$SLUG" \
+  --version "$VERSION" \
+  --path "$SKILL_PATH" \
+  --dry-run
+```
+
+### 8) Publish new skill or release version
+
+Create the namespace if needed:
+
+```bash
+skilldock namespaces create "$NAMESPACE"
+skilldock namespaces list
+```
+
+Publish a release:
+
+```bash
+skilldock skill upload \
+  --namespace "$NAMESPACE" \
+  --slug "$SLUG" \
+  --version "$VERSION" \
+  --path "$SKILL_PATH" \
+  [--homepage-url https://example.com]
+```
+
+Publish a private release:
+
+```bash
+skilldock skill upload \
+  --namespace "$NAMESPACE" \
+  --slug "$SLUG" \
+  --version "$VERSION" \
+  --path "$SKILL_PATH" \
+  --visibility private \
+  [--homepage-url https://example.com]
+```
+
+Publish a new version:
+
+```bash
+VERSION=1.2.4
+skilldock skill upload \
+  --namespace "$NAMESPACE" \
+  --slug "$SLUG" \
+  --version "$VERSION" \
+  --path "$SKILL_PATH" \
+  [--homepage-url https://example.com]
+```
+
+Homepage URL notes:
+
+- Optional; sent as a query param
+- Backend precedence: query > multipart > `SKILL.md` > existing DB
+- Validation: `http`/`https` only; length `<= 2048`
+- Leave blank to keep the existing value unchanged
+
+Dependencies:
+
+- Declare in `SKILL.md` frontmatter under `dependencies:` using semver ranges (for example `>=0.1.0 <0.2.0`)
+- Or pass repeatable `--dependency "namespace/skill@<range>"` flags on upload
+- API precedence merges frontmatter + CLI flags; invalid or missing dependency skills fail upload
+- Self-dependency is rejected
+
+Examples:
+
+```yaml
+# Frontmatter example
+dependencies:
+  - namespace: core
+    skill: base-utils
+    version_requirement: ">=1.2.0 <2.0.0"
+```
+
+```bash
+# CLI flag example
+skilldock skill upload \
+  --namespace "$NAMESPACE" \
+  --slug "$SLUG" \
+  --path "$SKILL_PATH" \
+  --dependency "core/base-utils@>=1.2.0 <2.0.0" \
+  --dependency "tools/lint@~2.0.0"
+```
+
+### 9) Search existing skills
+
+Free-text search:
+
+```bash
+skilldock skills search "docker"
+```
+
+Filter by namespace or tag:
+
+```bash
+skilldock skills search --namespace "$NAMESPACE" --tag "python"
+```
+
+Machine-readable output:
+
+```bash
+skilldock skills search "docker" --json
+```
+
+### 10) Download and install skills locally
+
+Install the latest version:
+
+```bash
+skilldock install acme/my-skill
+```
+
+Install an exact version:
+
+```bash
+skilldock install acme/my-skill --version 1.2.3
+```
+
+Install to a custom directory (for example Codex home skills):
+
+```bash
+skilldock install acme/my-skill --skills-dir "$CODEX_HOME/skills"
+```
+
+Notes:
+
+- The install command downloads the release archive and resolves dependencies recursively
+- The CLI writes local manifest and lock files (`.skilldock.json`, `.skilldock.lock.json`)
+
+### 11) Delete workflows
+
+Use the right delete path for the target object.
+
+Delete a local installed skill:
+
+```bash
+skilldock uninstall acme/my-skill
+```
+
+Delete an API token:
+
+```bash
+skilldock tokens list
+skilldock tokens revoke <TOKEN_ID>
+```
+
+Delete a remote release or remote skill:
+
+There is no dedicated high-level `skilldock skill delete` command.
+
+Use one of these patterns.
+
+Discover the delete operation from OpenAPI and call it by `operationId`:
+
+```bash
+skilldock ops
+# Identify the delete operation id for releases/skills, then:
+skilldock call <DeleteOperationId> --param namespace="$NAMESPACE" --param slug="$SLUG" --param version="$VERSION"
+```
+
+Use a low-level HTTP request when the API path is known:
+
+```bash
+skilldock request DELETE "/v1/skills/$NAMESPACE/$SLUG/releases/$VERSION"
+```
+
+If the API does not support that delete route, expect `404` or `405`.
+
+### 12) Quick troubleshooting
+
+- `401 Unauthorized`: Run `skilldock auth login` or set a valid token
+- `403 Forbidden`: Token is valid but missing permission
+- `404 Not Found`: Wrong namespace/slug/version, or object is not visible
+- Token expired: Run `skilldock auth login` again
+
+Check active configuration:
+
+```bash
+skilldock config path
+skilldock config show
+```
+
+## Revenue model
+
+For sold skills, SkillDock commission is **50%** of the sale price.
+
+- Provider share: **50%**
+- SkillDock commission: **50%**
+
+Read the Terms of Service for current legal and commercial terms:
+
+- https://skilldock.io/terms
+
+For commercial listing details, see [Commission model](/pricing#commission-model).
+
+## API
+
+The publish workflow can be automated with the SkillDock API.
+
+OpenAPI specification:
+
+- https://api.skilldock.io/openapi.json
+
+See the dedicated API guide for examples and integration patterns: [API](/api).
+
+## Verification process
+
+Verification is an automatic background process that runs security and quality checks.
+
+These checks may run for:
+
+- Public skills
+- Private skills
+- Free skills
+- Paid/selling skills
+
+The purpose of verification is to reduce the risk of:
+
+- Illegal or policy-breaking content/behavior
+- Malicious behavior
+- Vulnerable or unsafe behavior
+- Quality issues that can harm users or integrations
+
+If suspicious or unsafe behavior is detected, a skill may be:
+
+- Frozen and made unavailable for installation
+- Removed from listings
+- Permanently deleted
+
+These actions may be applied without notification.
+
+If you believe an action was triggered by an error, contact support:
+
+- support@skilldock.io
